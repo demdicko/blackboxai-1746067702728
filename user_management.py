@@ -4,24 +4,25 @@ import database
 import hashlib
 
 class LoginWindow(tk.Toplevel):
-    def __init__(self, master=None, on_login_success=None):
+    def __init__(self, master=None, on_login_success=None, language=None):
         super().__init__(master)
-        self.title("Login - Tolo Distribution")
+        self.language = language or {}
+        self.title(self.language.get("login_title", "Login - Tolo Distribution"))
         self.geometry("300x180")
         self.on_login_success = on_login_success
         self.conn = database.create_connection()
         self.create_widgets()
 
     def create_widgets(self):
-        tk.Label(self, text="Username:").pack(pady=5)
+        tk.Label(self, text=self.language.get("username_label", "Username:")).pack(pady=5)
         self.username_entry = tk.Entry(self)
         self.username_entry.pack(pady=5)
 
-        tk.Label(self, text="Password:").pack(pady=5)
+        tk.Label(self, text=self.language.get("password_label", "Password:")).pack(pady=5)
         self.password_entry = tk.Entry(self, show="*")
         self.password_entry.pack(pady=5)
 
-        self.login_btn = tk.Button(self, text="Login", command=self.login)
+        self.login_btn = tk.Button(self, text=self.language.get("login_btn", "Login"), command=self.login)
         self.login_btn.pack(pady=10)
 
     def login(self):
@@ -29,7 +30,7 @@ class LoginWindow(tk.Toplevel):
         password = self.password_entry.get()
 
         if not username or not password:
-            messagebox.showerror("Error", "Please enter username and password.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_enter_credentials", "Please enter username and password."))
             return
 
         password_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -40,12 +41,12 @@ class LoginWindow(tk.Toplevel):
 
         if result:
             role = result[0]
-            messagebox.showinfo("Success", f"Login successful. Role: {role}")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("welcome_message", "Login successful. Role: {role}").format(role=role))
             self.destroy()
             if self.on_login_success:
                 self.on_login_success(role)
         else:
-            messagebox.showerror("Error", "Invalid username or password.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_invalid_credentials", "Invalid username or password."))
 
 class UserManagement:
     def __init__(self, master=None):
