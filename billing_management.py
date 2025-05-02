@@ -5,9 +5,10 @@ import datetime
 from fpdf import FPDF
 
 class BillingManagement(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, language=None):
         super().__init__(master)
-        self.title("Billing and Invoicing")
+        self.language = language or {}
+        self.title(self.language.get("billing_management_title", "Billing and Invoicing"))
         self.geometry("900x600")
         self.conn = database.create_connection()
         self.create_widgets()
@@ -18,20 +19,20 @@ class BillingManagement(tk.Toplevel):
         self.tree = ttk.Treeview(self, columns=("ID", "Date", "Client", "Total Amount", "Payment Method"), show="headings")
         self.tree.heading("ID", text="ID")
         self.tree.column("ID", width=30)
-        self.tree.heading("Date", text="Date")
-        self.tree.heading("Client", text="Client")
-        self.tree.heading("Total Amount", text="Total Amount")
-        self.tree.heading("Payment Method", text="Payment Method")
+        self.tree.heading("Date", text=self.language.get("date_label", "Date"))
+        self.tree.heading("Client", text=self.language.get("client_label", "Client"))
+        self.tree.heading("Total Amount", text=self.language.get("total_amount_label", "Total Amount"))
+        self.tree.heading("Payment Method", text=self.language.get("payment_method_label", "Payment Method"))
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
-        self.generate_btn = tk.Button(btn_frame, text="Generate Invoice PDF", command=self.generate_invoice_pdf)
+        self.generate_btn = tk.Button(btn_frame, text=self.language.get("generate_invoice_btn", "Generate Invoice PDF"), command=self.generate_invoice_pdf)
         self.generate_btn.pack(side=tk.LEFT, padx=5)
 
-        self.export_btn = tk.Button(btn_frame, text="Export Invoice as PDF", command=self.export_invoice_pdf)
+        self.export_btn = tk.Button(btn_frame, text=self.language.get("export_invoice_btn", "Export Invoice as PDF"), command=self.export_invoice_pdf)
         self.export_btn.pack(side=tk.LEFT, padx=5)
 
     def load_sales(self):
@@ -51,7 +52,7 @@ class BillingManagement(tk.Toplevel):
     def generate_invoice_pdf(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showerror("Error", "Please select a sale to generate invoice.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_select_sale", "Please select a sale to generate invoice."))
             return
         item = self.tree.item(selected[0])
         sale_id = item['values'][0]
@@ -65,7 +66,7 @@ class BillingManagement(tk.Toplevel):
         """, (sale_id,))
         sale = cursor.fetchone()
         if not sale:
-            messagebox.showerror("Error", "Sale not found.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_sale_not_found", "Sale not found."))
             return
 
         pdf = FPDF()
@@ -87,12 +88,12 @@ class BillingManagement(tk.Toplevel):
 
         pdf_file = f"invoice_{sale[0]}.pdf"
         pdf.output(pdf_file)
-        messagebox.showinfo("Success", f"Invoice PDF generated: {pdf_file}")
+        messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_invoice_generated", f"Invoice PDF generated: {pdf_file}"))
 
     def export_invoice_pdf(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showerror("Error", "Please select a sale to export invoice.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_select_sale", "Please select a sale to export invoice."))
             return
         item = self.tree.item(selected[0])
         sale_id = item['values'][0]
@@ -106,7 +107,7 @@ class BillingManagement(tk.Toplevel):
         """, (sale_id,))
         sale = cursor.fetchone()
         if not sale:
-            messagebox.showerror("Error", "Sale not found.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_sale_not_found", "Sale not found."))
             return
 
         pdf = FPDF()
@@ -129,4 +130,5 @@ class BillingManagement(tk.Toplevel):
         file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
         if file_path:
             pdf.output(file_path)
-            messagebox.showinfo("Success", f"Invoice PDF exported: {file_path}")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_invoice_exported", f"Invoice PDF exported: {file_path}"))
+</create_file>
