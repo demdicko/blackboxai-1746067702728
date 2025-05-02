@@ -4,9 +4,10 @@ import database
 import datetime
 
 class StockManagement(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, language=None):
         super().__init__(master)
-        self.title("Stock Management")
+        self.language = language or {}
+        self.title(self.language.get("stock_management_title", "Stock Management"))
         self.geometry("900x600")
         self.conn = database.create_connection()
         self.create_widgets()
@@ -19,17 +20,17 @@ class StockManagement(tk.Toplevel):
         form_frame = tk.Frame(self)
         form_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        tk.Label(form_frame, text="Select Product:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("select_product_label", "Select Product:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.product_var = tk.StringVar()
         self.product_combo = ttk.Combobox(form_frame, textvariable=self.product_var, state="readonly")
         self.product_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Quantity:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("quantity_label", "Quantity:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.quantity_var = tk.IntVar(value=1)
         self.quantity_entry = tk.Entry(form_frame, textvariable=self.quantity_var)
         self.quantity_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Supplier:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("select_supplier_label", "Select Supplier:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.supplier_var = tk.StringVar()
         self.supplier_combo = ttk.Combobox(form_frame, textvariable=self.supplier_var, state="readonly")
         self.supplier_combo.grid(row=2, column=1, padx=5, pady=5)
@@ -38,20 +39,20 @@ class StockManagement(tk.Toplevel):
         btn_frame = tk.Frame(form_frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
 
-        self.add_btn = tk.Button(btn_frame, text="Add Stock Entry", command=self.add_stock_entry)
+        self.add_btn = tk.Button(btn_frame, text=self.language.get("add_stock_entry_btn", "Add Stock Entry"), command=self.add_stock_entry)
         self.add_btn.pack(side=tk.LEFT, padx=5)
 
-        self.clear_btn = tk.Button(btn_frame, text="Clear", command=self.clear_form)
+        self.clear_btn = tk.Button(btn_frame, text=self.language.get("clear_btn", "Clear"), command=self.clear_form)
         self.clear_btn.pack(side=tk.LEFT, padx=5)
 
         # Stock entries list
         self.tree = ttk.Treeview(self, columns=("ID", "Date", "Product", "Quantity", "Supplier"), show="headings")
         self.tree.heading("ID", text="ID")
         self.tree.column("ID", width=30)
-        self.tree.heading("Date", text="Date")
-        self.tree.heading("Product", text="Product")
-        self.tree.heading("Quantity", text="Quantity")
-        self.tree.heading("Supplier", text="Supplier")
+        self.tree.heading("Date", text=self.language.get("date_label", "Date"))
+        self.tree.heading("Product", text=self.language.get("product_label", "Product"))
+        self.tree.heading("Quantity", text=self.language.get("quantity_label", "Quantity"))
+        self.tree.heading("Supplier", text=self.language.get("supplier_label", "Supplier"))
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def load_products(self):
@@ -100,14 +101,14 @@ class StockManagement(tk.Toplevel):
         supplier_name = self.supplier_var.get()
 
         if not product_ref or quantity <= 0:
-            messagebox.showerror("Error", "Please select a product and enter a valid quantity.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_select_product_quantity", "Please select a product and enter a valid quantity."))
             return
 
         product = next((p for p in self.products if p[1] == product_ref), None)
         supplier = next((s for s in self.suppliers if s[1] == supplier_name), None)
 
         if not product:
-            messagebox.showerror("Error", "Selected product not found.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_product_not_found", "Selected product not found."))
             return
 
         supplier_id = supplier[0] if supplier else None
@@ -128,8 +129,9 @@ class StockManagement(tk.Toplevel):
             cursor.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", (new_stock, product[0]))
 
             self.conn.commit()
-            messagebox.showinfo("Success", "Stock entry added successfully.")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_stock_entry_added", "Stock entry added successfully."))
             self.load_stock_entries()
             self.clear_form()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add stock entry: {e}")
+            messagebox.showerror(self.language.get("error", "Error"), f"{self.language.get('error')}: {e}")
+</create_file>
