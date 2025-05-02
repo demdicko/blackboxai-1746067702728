@@ -4,9 +4,10 @@ import database
 import datetime
 
 class SalesManagement(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, language=None):
         super().__init__(master)
-        self.title("Sales Management")
+        self.language = language or {}
+        self.title(self.language.get("manage_sales", "Sales Management"))
         self.geometry("900x600")
         self.conn = database.create_connection()
         self.create_widgets()
@@ -18,37 +19,41 @@ class SalesManagement(tk.Toplevel):
         product_frame = tk.Frame(self)
         product_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        tk.Label(product_frame, text="Select Product:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("select_product_label", "Select Product:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.product_var = tk.StringVar()
         self.product_combo = ttk.Combobox(product_frame, textvariable=self.product_var, state="readonly")
         self.product_combo.grid(row=0, column=1, padx=5, pady=5)
         self.product_combo.bind("<<ComboboxSelected>>", self.on_product_selected)
 
-        tk.Label(product_frame, text="Available Stock:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("available_stock_label", "Available Stock:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.stock_label = tk.Label(product_frame, text="0")
         self.stock_label.grid(row=0, column=3, padx=5, pady=5)
 
-        tk.Label(product_frame, text="Quantity:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("quantity_label", "Quantity:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.quantity_var = tk.IntVar(value=1)
         self.quantity_entry = tk.Entry(product_frame, textvariable=self.quantity_var)
         self.quantity_entry.grid(row=1, column=1, padx=5, pady=5)
 
         # Payment method
-        tk.Label(product_frame, text="Payment Method:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("payment_method_label", "Payment Method:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.payment_var = tk.StringVar()
         self.payment_combo = ttk.Combobox(product_frame, textvariable=self.payment_var, state="readonly")
-        self.payment_combo['values'] = ("Espèces", "Mobile Money", "Crédit")
+        self.payment_combo['values'] = (
+            self.language.get("payment_cash", "Cash"),
+            self.language.get("payment_mobile_money", "Mobile Money"),
+            self.language.get("payment_credit", "Credit"),
+        )
         self.payment_combo.grid(row=2, column=1, padx=5, pady=5)
         self.payment_combo.current(0)
 
         # Client selection (optional for credit)
-        tk.Label(product_frame, text="Client (for credit):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("client_for_credit_label", "Client (for credit):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.client_var = tk.StringVar()
         self.client_combo = ttk.Combobox(product_frame, textvariable=self.client_var, state="readonly")
         self.client_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Total amount display
-        tk.Label(product_frame, text="Total Amount:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(product_frame, text=self.language.get("total_amount_label", "Total Amount:")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.total_amount_var = tk.DoubleVar(value=0.0)
         self.total_amount_label = tk.Label(product_frame, textvariable=self.total_amount_var)
         self.total_amount_label.grid(row=4, column=1, padx=5, pady=5)
@@ -57,23 +62,25 @@ class SalesManagement(tk.Toplevel):
         btn_frame = tk.Frame(product_frame)
         btn_frame.grid(row=5, column=0, columnspan=4, pady=10)
 
-        self.add_sale_btn = tk.Button(btn_frame, text="Record Sale", command=self.record_sale)
+        self.add_sale_btn = tk.Button(btn_frame, text=self.language.get("record_sale_btn", "Record Sale"), command=self.record_sale)
         self.add_sale_btn.pack(side=tk.LEFT, padx=5)
 
-        self.clear_btn = tk.Button(btn_frame, text="Clear", command=self.clear_form)
+        self.clear_btn = tk.Button(btn_frame, text=self.language.get("clear_btn", "Clear"), command=self.clear_form)
         self.clear_btn.pack(side=tk.LEFT, padx=5)
 
         # Sales list
-        self.tree = ttk.Treeview(self, columns=("ID", "Date", "Product", "Quantity", "Total Amount", "Payment Method", "Client", "Profit"), show="headings")
+        self.tree = ttk.Treeview(self, columns=(
+            "ID", "Date", "Product", "Quantity", "Total Amount", "Payment Method", "Client", "Profit"
+        ), show="headings")
         self.tree.heading("ID", text="ID")
         self.tree.column("ID", width=30)
-        self.tree.heading("Date", text="Date")
-        self.tree.heading("Product", text="Product")
-        self.tree.heading("Quantity", text="Quantity")
-        self.tree.heading("Total Amount", text="Total Amount")
-        self.tree.heading("Payment Method", text="Payment Method")
-        self.tree.heading("Client", text="Client")
-        self.tree.heading("Profit", text="Profit")
+        self.tree.heading("Date", text=self.language.get("date_label", "Date"))
+        self.tree.heading("Product", text=self.language.get("product_label", "Product"))
+        self.tree.heading("Quantity", text=self.language.get("quantity_label", "Quantity"))
+        self.tree.heading("Total Amount", text=self.language.get("total_amount_label", "Total Amount"))
+        self.tree.heading("Payment Method", text=self.language.get("payment_method_label", "Payment Method"))
+        self.tree.heading("Client", text=self.language.get("client_label", "Client"))
+        self.tree.heading("Profit", text=self.language.get("profit_label", "Profit"))
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.load_sales()
@@ -131,19 +138,19 @@ class SalesManagement(tk.Toplevel):
         selected_ref = self.product_var.get()
         quantity = self.quantity_var.get()
         payment_method = self.payment_var.get()
-        client_name = self.client_var.get() if payment_method == "Crédit" else None
+        client_name = self.client_var.get() if payment_method == self.language.get("payment_credit", "Credit") else None
 
         product = next((p for p in self.products if p[1] == selected_ref), None)
         if not product:
-            messagebox.showerror("Error", "Please select a valid product.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_select_valid_product", "Please select a valid product."))
             return
 
         if quantity <= 0:
-            messagebox.showerror("Error", "Quantity must be greater than zero.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_quantity_positive", "Quantity must be greater than zero."))
             return
 
         if quantity > product[3]:
-            messagebox.showerror("Error", "Insufficient stock for the selected product.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_insufficient_stock", "Insufficient stock for the selected product."))
             return
 
         client_id = None
@@ -152,7 +159,7 @@ class SalesManagement(tk.Toplevel):
             if client:
                 client_id = client[0]
             else:
-                messagebox.showerror("Error", "Selected client not found.")
+                messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_client_not_found", "Selected client not found."))
                 return
 
         total_amount = product[2] * quantity
@@ -173,18 +180,18 @@ class SalesManagement(tk.Toplevel):
             """, (new_stock, product[0]))
 
             # Update client credit balance if payment is credit
-            if payment_method == "Crédit" and client_id:
+            if payment_method == self.language.get("payment_credit", "Credit") and client_id:
                 cursor.execute("""
                     UPDATE clients SET credit_balance = credit_balance + ? WHERE id = ?
                 """, (total_amount, client_id))
 
             self.conn.commit()
-            messagebox.showinfo("Success", "Sale recorded successfully.")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_sale_recorded", "Sale recorded successfully."))
             self.load_sales()
             self.load_products()
             self.clear_form()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to record sale: {e}")
+            messagebox.showerror(self.language.get("error", "Error"), f"{self.language.get('error')}: {e}")
 
     def load_sales(self):
         for row in self.tree.get_children():
