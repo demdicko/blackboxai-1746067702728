@@ -4,9 +4,10 @@ import database
 import datetime
 
 class OrderManagement(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, language=None):
         super().__init__(master)
-        self.title("Order Management")
+        self.language = language or {}
+        self.title(self.language.get("order_management_title", "Order Management"))
         self.geometry("900x600")
         self.conn = database.create_connection()
         self.create_widgets()
@@ -18,19 +19,24 @@ class OrderManagement(tk.Toplevel):
         form_frame = tk.Frame(self)
         form_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        tk.Label(form_frame, text="Select Client:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("select_client_label", "Select Client:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.client_var = tk.StringVar()
         self.client_combo = ttk.Combobox(form_frame, textvariable=self.client_var, state="readonly")
         self.client_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Order Details:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("order_details_label", "Order Details:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.order_details_text = tk.Text(form_frame, height=5, width=50)
         self.order_details_text.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Status:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        tk.Label(form_frame, text=self.language.get("status_label", "Status:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.status_var = tk.StringVar()
         self.status_combo = ttk.Combobox(form_frame, textvariable=self.status_var, state="readonly")
-        self.status_combo['values'] = ("En attente", "En cours", "Livré", "Annulé")
+        self.status_combo['values'] = (
+            self.language.get("status_pending", "Pending"),
+            self.language.get("status_in_progress", "In Progress"),
+            self.language.get("status_delivered", "Delivered"),
+            self.language.get("status_cancelled", "Cancelled"),
+        )
         self.status_combo.grid(row=2, column=1, padx=5, pady=5)
         self.status_combo.current(0)
 
@@ -38,23 +44,23 @@ class OrderManagement(tk.Toplevel):
         btn_frame = tk.Frame(form_frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
 
-        self.add_btn = tk.Button(btn_frame, text="Add Order", command=self.add_order)
+        self.add_btn = tk.Button(btn_frame, text=self.language.get("add_order_btn", "Add Order"), command=self.add_order)
         self.add_btn.pack(side=tk.LEFT, padx=5)
 
-        self.update_btn = tk.Button(btn_frame, text="Update Order", command=self.update_order, state=tk.DISABLED)
+        self.update_btn = tk.Button(btn_frame, text=self.language.get("update_order_btn", "Update Order"), command=self.update_order, state=tk.DISABLED)
         self.update_btn.pack(side=tk.LEFT, padx=5)
 
-        self.delete_btn = tk.Button(btn_frame, text="Delete Order", command=self.delete_order, state=tk.DISABLED)
+        self.delete_btn = tk.Button(btn_frame, text=self.language.get("delete_order_btn", "Delete Order"), command=self.delete_order, state=tk.DISABLED)
         self.delete_btn.pack(side=tk.LEFT, padx=5)
 
         # Order list
         self.tree = ttk.Treeview(self, columns=("ID", "Client", "Order Details", "Status", "Date"), show="headings")
         self.tree.heading("ID", text="ID")
         self.tree.column("ID", width=30)
-        self.tree.heading("Client", text="Client")
-        self.tree.heading("Order Details", text="Order Details")
-        self.tree.heading("Status", text="Status")
-        self.tree.heading("Date", text="Date")
+        self.tree.heading("Client", text=self.language.get("client_label", "Client"))
+        self.tree.heading("Order Details", text=self.language.get("order_details_label", "Order Details"))
+        self.tree.heading("Status", text=self.language.get("status_label", "Status"))
+        self.tree.heading("Date", text=self.language.get("date_label", "Date"))
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
@@ -118,12 +124,12 @@ class OrderManagement(tk.Toplevel):
         status = self.status_var.get()
 
         if not client_name or not order_details:
-            messagebox.showerror("Error", "Client and order details are required.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_client_required", "Client and order details are required."))
             return
 
         client = next((c for c in self.clients if c[1] == client_name), None)
         if not client:
-            messagebox.showerror("Error", "Selected client not found.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_client_not_found", "Selected client not found."))
             return
 
         date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -135,11 +141,11 @@ class OrderManagement(tk.Toplevel):
                 VALUES (?, ?, ?, ?)
             """, (client[0], order_details, status, date_str))
             self.conn.commit()
-            messagebox.showinfo("Success", "Order added successfully.")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_order_added", "Order added successfully."))
             self.load_orders()
             self.clear_form()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add order: {e}")
+            messagebox.showerror(self.language.get("error", "Error"), f"{self.language.get('error')}: {e}")
 
     def update_order(self):
         client_name = self.client_var.get()
@@ -147,12 +153,12 @@ class OrderManagement(tk.Toplevel):
         status = self.status_var.get()
 
         if not client_name or not order_details:
-            messagebox.showerror("Error", "Client and order details are required.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_client_required", "Client and order details are required."))
             return
 
         client = next((c for c in self.clients if c[1] == client_name), None)
         if not client:
-            messagebox.showerror("Error", "Selected client not found.")
+            messagebox.showerror(self.language.get("error", "Error"), self.language.get("error_client_not_found", "Selected client not found."))
             return
 
         try:
@@ -163,19 +169,20 @@ class OrderManagement(tk.Toplevel):
                 WHERE id = ?
             """, (client[0], order_details, status, self.selected_id))
             self.conn.commit()
-            messagebox.showinfo("Success", "Order updated successfully.")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_order_updated", "Order updated successfully."))
             self.load_orders()
             self.clear_form()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update order: {e}")
+            messagebox.showerror(self.language.get("error", "Error"), f"{self.language.get('error')}: {e}")
 
     def delete_order(self):
         try:
             cursor = self.conn.cursor()
             cursor.execute("DELETE FROM orders WHERE id = ?", (self.selected_id,))
             self.conn.commit()
-            messagebox.showinfo("Success", "Order deleted successfully.")
+            messagebox.showinfo(self.language.get("success", "Success"), self.language.get("success_order_deleted", "Order deleted successfully."))
             self.load_orders()
             self.clear_form()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete order: {e}")
+            messagebox.showerror(self.language.get("error", "Error"), f"{self.language.get('error')}: {e}")
+</create_file>
